@@ -20,7 +20,6 @@ const playerFactory = (name, mark) => {
 // game logic
 const boardObject = (() => {
 
-    
 
     let boardArray = ["", "", "", "", "", "", "", "", ""];
     const cells = Array.from(document.querySelectorAll(".cell"));
@@ -40,16 +39,44 @@ const boardObject = (() => {
         boardArray = newArray;
     }
 
+    const checkWin = (currentPlayer) => {
+        const winArraysCombinations = [
+          [0, 1, 2],
+          [3, 4, 5],
+          [6, 7, 8],
+          [0, 3, 6],
+          [1, 4, 7],
+          [2, 5, 8],
+          [0, 4, 8],
+          [2, 4, 6],
+        ];
     
+        return winArraysCombinations.some((combination) => {
+          return combination.every((index) => {
+            return boardArray[index].includes(currentPlayer.mark);
+          });
+        });
+      };
+    
+      const isDraw = (playerOne, playerTwo) => {
+        return boardArray.every((cell) => {
+          return cell.includes(playerOne) || cell.includes(playerTwo);
+        });
+      };
 
 
-
+      const reset = () => {
+        boardArray = ["", "", "", "", "", "", "", "", ""];
+      }
 
     return {
         cells,
         render,
         getBoard,
-        setBoard
+        setBoard,
+        checkWin,
+        isDraw,
+        reset
     }
 
 })();
@@ -81,7 +108,6 @@ const displayControler = (() => {
             player1 = playerFactory(playerOneName.value, "x");
             player2 = playerFactory(playerTwoName.value, "o");
             currentPlayer = player1;
-            gameText.textContent = ("It's " + currentPlayer.name + "'s turn")
         }
     }
 
@@ -91,21 +117,39 @@ const displayControler = (() => {
         window.location.reload();
     }
 
+    
+
+    //add event listeners to gameboard divs
     for (let i=0; i<cell.length; i++) {
         cell[i].addEventListener("click", function(event) {  
-            currentPlayer.playTurn(event, currentPlayer.mark);
-            switchPlayer();
-            
+            if (event.target.textContent === "") {
+                currentPlayer.playTurn(event, currentPlayer.mark);
+                
+                if (boardObject.checkWin(currentPlayer)) {
+                    gameText.textContent = `${currentPlayer.name} is a winner!`;
+                    boardObject.reset();
+                    boardObject.render();
+                } else if (boardObject.isDraw(player1.mark, player2.mark)) {
+                    gameText.textContent = `It's a Tie..`;
+                    boardObject.reset();
+                    boardObject.render();
+                } else {
+                switchPlayer();
+                gameText.textContent = `Player ${currentPlayer.mark}: ${currentPlayer.name}'s turn!`;
+                }
+            }
         })
     }
 
+
+
     
- 
+    //reset game button
     resetButton.addEventListener("click", () => {        
         resetGame();
     })
 
-
+    //submit player names, start game
    form.addEventListener("submit", (event) => {
     event.preventDefault();
     if (playerOneName.value !== "" && playerTwoName.value !== "") {
